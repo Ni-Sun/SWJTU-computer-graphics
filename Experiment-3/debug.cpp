@@ -1,6 +1,6 @@
 #include "debug.h"
 
-#define DEBUG
+// #define DEBUG
 #ifdef DEBUG
 void debug(string str)
 {
