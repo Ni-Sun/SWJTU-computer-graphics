@@ -1,5 +1,3 @@
-## **来自<a href=https://github.com/Ni-Sun/SWJTU-computer-graphics> Ni-Sun:SWJTU-computer-graphics </a>**
-
 ### **实验要求**
 
 <img src="image/img1.png" alt="实验1" width="700" height="800">
