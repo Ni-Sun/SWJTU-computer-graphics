@@ -14,6 +14,10 @@ struct Circle
     int r;      // 半径
     static RECT rect;
     static COLORREF color;
+    static RECT midpoint_rect;
+    static COLORREF midpoint_color;
+    static RECT bresenham_rect;
+    static COLORREF bresenham_color;
     Circle()
     {
         O={0,0};
@@ -26,3 +30,5 @@ struct Circle
 };
 
 void Draw_circle(HWND hWnd, vector<POINT> &arr);
+void Draw_midpoint_circle(HWND hWnd, vector<POINT> &arr);
+void Draw_bresenham_circle(HWND hWnd, vector<POINT> &arr);

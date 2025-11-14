@@ -38,13 +38,14 @@ Point operator/(const Point &P, const double &k)
     return {double(P.x)/k, double(P.y)/k};
 }
 
-// 逆时针旋转 90 度
+// 逆时针旋转 90 度,即(x,y)变为(-y,x)
 Point rotleft(Point P)
 {
     return {-P.y,P.x};
 }
 
-// 顺时针旋转 90 度
+// 顺时针旋转 90 度,即(x,y)变为(y,-x)
+
 Point rotright(Point P)
 {
     return {P.y,-P.x};
@@ -58,4 +59,5 @@ Point trunc(Point P, double r)
         return P;
     r/=l;
     return {P.x*r, P.y*r};
+    //从原点沿着(0,0),(P.x,P.y),长度为r
 }

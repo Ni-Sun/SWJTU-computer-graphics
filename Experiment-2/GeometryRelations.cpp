@@ -25,6 +25,7 @@ int relation_circle_and_circle(Circle a, Circle b)
     if(d-a.r-b.r<0 && d-l>0)    return 3;
     if(fabs(d-l)<=1e-6) return 2;
     if(d-l<0)   return 1;
+    return 5;
 }
 
 //求直线和圆的交点
@@ -42,7 +43,7 @@ pair<POINT,POINT> Circle_cross_line(Circle A, Line B)
     return make_pair(P1.to_POINT(),P2.to_POINT());
 }
 
-//求两个圆的交点
+//求两个圆的交点,其中turnc为截断小数，仅取整数
 pair<POINT,POINT> Circle_cross_circle(Circle A, Circle B)
 {
     int rel=relation_circle_and_circle(A,B);

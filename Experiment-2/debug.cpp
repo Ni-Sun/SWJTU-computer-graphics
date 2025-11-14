@@ -1,19 +1,24 @@
+// ...existing code...
 #include "debug.h"
+#include <windows.h>
+#include <string>
+#include <cstdlib>
 
-#define DEBUG
+// ...existing code...
 #ifdef DEBUG
-void debug(string str)
+void debug(const std::string &str)
 {
     AllocConsole();
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    WriteConsole(hConsole, LPSTR(str.c_str()), str.length(), NULL, NULL);
+    DWORD written = 0;
+    WriteConsoleA(hConsole, str.c_str(), (DWORD)str.length(), &written, NULL);
     system("pause");
     FreeConsole();
 }
 #endif
-
-string to_string(POINT P)
+// ...existing code...
+std::string to_string(POINT P)
 {
-    string str='('+to_string(P.x)+','+to_string(P.y)+')';
-    return str;
+    return std::string("(") + std::to_string(P.x) + "," + std::to_string(P.y) + ")";
 }
+// ...existing code...
