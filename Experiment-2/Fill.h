@@ -16,17 +16,11 @@ extern std::vector<class Bezier> beziers;
 
 const COLORREF FILL_COLOR = RGB(211, 211, 211); // Light gray
 
-class Scanline_fill {
-public:
-    static RECT rect;
-    static COLORREF color;
-};
-
-class Seed_fill {
-public:
-    static RECT rect;
-    static COLORREF color;
-};
+// Declarations for button rectangles, defined in Fill.cpp
+extern RECT scanline_button_rect;
+extern COLORREF scanline_button_color;
+extern RECT seed_button_rect;
+extern COLORREF seed_button_color;
 
 // Struct to hold information about a filled shape for persistence
 struct FilledShape {
@@ -39,5 +33,6 @@ struct FilledShape {
 // Global vector to store all filled shapes
 extern std::vector<FilledShape> filled_shapes;
 
+void scanlineFill(HDC hdc, const std::vector<POINT>& vertices, COLORREF fillColor);
+void seedFill(HDC hdc, int x, int y, COLORREF fillColor, COLORREF boundaryColor);
 void fillShape(HDC hdc, int shape_type, int shape_index, bool use_scanline, const POINT& click_pos);
-

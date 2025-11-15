@@ -15,6 +15,7 @@
 #include "Select_center.h"
 #include "Select_perp.h"
 #include "Bezier.h"
+#include "Fill.h"
 
 extern vector<Line> lines;
 extern vector<Circle> circles;
@@ -77,10 +78,10 @@ void Draw_Title(HWND hWnd, HDC hdc)
     draw(Circle::midpoint_color, Circle::midpoint_rect, L"中点，圆");
     draw(Circle::bresenham_color, Circle::bresenham_rect, L"Bres，圆");
     draw(Bezier::color, Bezier::rect, L"Bezier");
-    draw(Scanline_fill::color, Scanline_fill::rect, L"扫描线");
-    draw(Seed_fill::color, Seed_fill::rect, L"种子");
+    draw(scanline_button_color, scanline_button_rect, L"扫描线");
+    draw(seed_button_color, seed_button_rect, L"种子");
     // draw()
-    // 恢复并删除临时字体
+    // 恢复并删除临时字体//
     SelectObject(hdc, hOldFont);
     DeleteObject(hFont);
 }

@@ -273,11 +273,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             LoadShapes(hWnd);
         }
-        else if(PtInRect(&Scanline_fill::rect, bt))
+        else if(PtInRect(&scanline_button_rect, bt))
         {
             note(20, "Scanline Fill");
         }
-        else if(PtInRect(&Seed_fill::rect, bt))
+        else if(PtInRect(&seed_button_rect, bt))
         {
             note(21, "Seed Fill");
         }

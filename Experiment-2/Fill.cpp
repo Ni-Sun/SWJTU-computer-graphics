@@ -10,11 +10,11 @@
 #include <vector>
 #include <list>
 
-RECT Scanline_fill::rect = {910, 530, 980, 560};
-COLORREF Scanline_fill::color = RGB(211, 211, 211);
+RECT scanline_button_rect = {500, 530, 570, 560};
+COLORREF scanline_button_color = RGB(211, 211, 211);
 
-RECT Seed_fill::rect = {830, 530, 900, 560};
-COLORREF Seed_fill::color = RGB(211, 211, 211);
+RECT seed_button_rect = {570, 530, 640, 560};
+COLORREF seed_button_color = RGB(211, 211, 211);
 
 struct Edge {
     double ymax;
