@@ -36,3 +36,4 @@ extern std::vector<FilledShape> filled_shapes;
 void scanlineFill(HDC hdc, const std::vector<POINT>& vertices, COLORREF fillColor);
 void seedFill(HDC hdc, int x, int y, COLORREF fillColor, COLORREF boundaryColor);
 void fillShape(HDC hdc, int shape_type, int shape_index, bool use_scanline, const POINT& click_pos);
+void redrawFill(HDC hdc, const FilledShape& shape);

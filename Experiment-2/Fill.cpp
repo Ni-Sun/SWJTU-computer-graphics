@@ -16,6 +16,9 @@ COLORREF scanline_button_color = RGB(211, 211, 211);
 RECT seed_button_rect = {570, 530, 640, 560};
 COLORREF seed_button_color = RGB(211, 211, 211);
 
+// Define the global vector for filled shapes
+std::vector<FilledShape> filled_shapes;
+
 struct Edge {
     double ymax;
     double x;
@@ -83,12 +86,18 @@ void scanlineFill(HDC hdc, const std::vector<POINT>& vertices, COLORREF fillColo
 }
 
 void seedFill(HDC hdc, int x, int y, COLORREF fillColor, COLORREF boundaryColor) {
+    COLORREF start_color = GetPixel(hdc, x, y);
+    if (start_color == boundaryColor || start_color == fillColor) {
+        return;
+    }
     std::list<POINT> queue;
     queue.push_back({x, y});
 
     while (!queue.empty()) {
         POINT p = queue.front();
         queue.pop_front();
+
+        if (p.x < 0 || p.x >= 900 || p.y < 0 || p.y >= 600) continue;
 
         COLORREF current_color = GetPixel(hdc, p.x, p.y);
         if (current_color != boundaryColor && current_color != fillColor) {
@@ -105,13 +114,20 @@ void fillShape(HDC hdc, int shape_type, int shape_index, bool use_scanline, cons
     std::vector<POINT> vertices;
     COLORREF boundaryColor = 0;
 
+    // Check if the shape is already filled
+    for (const auto& filled : filled_shapes) {
+        if (filled.type == shape_type && filled.index == shape_index) {
+            return; // Already filled, do nothing
+        }
+    }
+
     switch (shape_type) {
         case 1: { // Circle
             if (shape_index < circles.size()) {
                 Circle& c = circles[shape_index];
                 boundaryColor = Circle::color;
                  if (!use_scanline) {
-                    seedFill(hdc, c.O.x, c.O.y, FILL_COLOR, boundaryColor);
+                    seedFill(hdc, click_pos.x, click_pos.y, FILL_COLOR, boundaryColor);
                 }
             }
             break;
@@ -163,14 +179,93 @@ void fillShape(HDC hdc, int shape_type, int shape_index, bool use_scanline, cons
 
     if (use_scanline && !vertices.empty()) {
         scanlineFill(hdc, vertices, FILL_COLOR);
-    } else if (!use_scanline && !vertices.empty()) {
-        POINT center = {0, 0};
-        for(const auto& p : vertices) {
-            center.x += p.x;
-            center.y += p.y;
+        filled_shapes.push_back({shape_type, shape_index, use_scanline, click_pos});
+    } else if (!use_scanline) { // For both circle and polygon types
+        if (shape_type != 1 && vertices.empty()) return; // Not a circle and no vertices
+        
+        if(shape_type != 1) // Polygons
+        {
+            seedFill(hdc, click_pos.x, click_pos.y, FILL_COLOR, boundaryColor);
         }
-        center.x /= vertices.size();
-        center.y /= vertices.size();
-        seedFill(hdc, center.x, center.y, FILL_COLOR, boundaryColor);
+        else // Circle
+        {
+            if (shape_index < circles.size()) {
+                 seedFill(hdc, click_pos.x, click_pos.y, FILL_COLOR, Circle::color);
+            }
+        }
+        
+        // Add to persistence layer
+        filled_shapes.push_back({shape_type, shape_index, use_scanline, click_pos});
+    }
+}
+
+void redrawFill(HDC hdc, const FilledShape& shape)
+{
+    std::vector<POINT> vertices;
+    COLORREF boundaryColor = 0;
+
+    switch (shape.type) {
+        case 1: { // Circle
+            if (shape.index < circles.size()) {
+                Circle& c = circles[shape.index];
+                boundaryColor = Circle::color;
+                 if (!shape.use_scanline) {
+                    seedFill(hdc, shape.seed_point.x, shape.seed_point.y, FILL_COLOR, boundaryColor);
+                }
+            }
+            break;
+        }
+        case 2: { // Rect
+            if (shape.index < rects.size()) {
+                Rect& r = rects[shape.index];
+                boundaryColor = Rect::color;
+                vertices.push_back({r.left, r.top});
+                vertices.push_back({r.right, r.top});
+                vertices.push_back({r.right, r.bottom});
+                vertices.push_back({r.left, r.bottom});
+            }
+            break;
+        }
+        case 8: { // Triangle
+            if (shape.index < triangles.size()) {
+                Triangle& t = triangles[shape.index];
+                boundaryColor = Triangle::color;
+                vertices.push_back(t.A);
+                vertices.push_back(t.B);
+                vertices.push_back(t.C);
+            }
+            break;
+        }
+        case 9: { // Parallelogram
+            if (shape.index < parallelograms.size()) {
+                Parallelogram& p = parallelograms[shape.index];
+                boundaryColor = Parallelogram::color;
+                vertices.push_back(p.A);
+                vertices.push_back(p.B);
+                vertices.push_back(p.C);
+                vertices.push_back(p.D);
+            }
+            break;
+        }
+        case 11: { // Rhombus
+            if (shape.index < rhombuses.size()) {
+                Rhombus& r = rhombuses[shape.index];
+                boundaryColor = Rhombus::color;
+                vertices.push_back(r.A);
+                vertices.push_back(r.B);
+                vertices.push_back(r.C);
+                vertices.push_back(r.D);
+            }
+            break;
+        }
+    }
+
+    if (shape.use_scanline && !vertices.empty()) {
+        scanlineFill(hdc, vertices, FILL_COLOR);
+    } else if (!shape.use_scanline) {
+        if (shape.type != 1 && vertices.empty()) return;
+        
+        if(shape.type != 1) // Polygons
+            seedFill(hdc, shape.seed_point.x, shape.seed_point.y, FILL_COLOR, boundaryColor);
     }
 }

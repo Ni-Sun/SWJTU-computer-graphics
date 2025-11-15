@@ -429,6 +429,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 RECT bbox = {lx-5,by-5,rx+5,ty+5};
                 if(PtInRect(&bbox, bt)) { selected_type=4; selected_index=i; found=true; InvalidateRect(hWnd,NULL,TRUE); break; }
             }
+            //种子填充法问题：在封闭曲线范围外能够画图
             for(int i=(int)triangles.size()-1;i>=0 && !found;--i){
                 auto &T = triangles[i];
                 int lx = min({T.A.x, T.B.x, T.C.x}) - 5;

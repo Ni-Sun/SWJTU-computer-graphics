@@ -88,6 +88,11 @@ void Draw_Title(HWND hWnd, HDC hdc)
 
 void Show_graphics(HWND hWnd, HDC hdc)
 {
+    // Redraw filled shapes for persistence
+    for (const auto& shape : filled_shapes) {
+        redrawFill(hdc, shape);
+    }
+
     vector<POINT> arr;
     for(auto &l: lines)
     {
@@ -100,12 +105,13 @@ void Show_graphics(HWND hWnd, HDC hdc)
     }
     for(auto &cir: circles)
     {
-        HBRUSH hBrush = CreateSolidBrush(Circle::color);
-        HBRUSH hOld = (HBRUSH)SelectObject(hdc, hBrush);
-        SetBkMode(hdc, TRANSPARENT);
+        HPEN hPen = CreatePen(PS_SOLID, 2, Circle::color);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
         Ellipse(hdc, cir.O.x - cir.r, cir.O.y - cir.r, cir.O.x + cir.r, cir.O.y + cir.r);
-        SelectObject(hdc, hOld);
-        DeleteObject(hBrush);
+        SelectObject(hdc, hOldPen);
+        SelectObject(hdc, hOldBrush);
+        DeleteObject(hPen);
     }
     // 如果有 overlay 文本需要显示（例如选点显示最近交点），在标题区显示
     if (overlay_show && !overlay_text.empty()) {
@@ -117,45 +123,49 @@ void Show_graphics(HWND hWnd, HDC hdc)
     // Draw existing rects
     for(auto &r: rects)
     {
-        HBRUSH hBrush = CreateSolidBrush(Rect::color);
-        HBRUSH hOld = (HBRUSH)SelectObject(hdc, hBrush);
-        SetBkMode(hdc, TRANSPARENT);
+        HPEN hPen = CreatePen(PS_SOLID, 2, Rect::color);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
         Rectangle(hdc, r.left, r.top, r.right, r.bottom);
-        SelectObject(hdc, hOld);
-        DeleteObject(hBrush);
+        SelectObject(hdc, hOldPen);
+        SelectObject(hdc, hOldBrush);
+        DeleteObject(hPen);
     }
     // Draw existing triangles
     for(auto &tri: triangles)
     {
-        HBRUSH hBrush = CreateSolidBrush(Triangle::color);
-        HBRUSH hOld = (HBRUSH)SelectObject(hdc, hBrush);
-        SetBkMode(hdc, TRANSPARENT);
+        HPEN hPen = CreatePen(PS_SOLID, 2, Triangle::color);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
         POINT pts[3] = {tri.A, tri.B, tri.C};
         Polygon(hdc, pts, 3);
-        SelectObject(hdc, hOld);
-        DeleteObject(hBrush);
+        SelectObject(hdc, hOldPen);
+        SelectObject(hdc, hOldBrush);
+        DeleteObject(hPen);
     }
     // Draw existing parallelograms
     for(auto &pg: parallelograms)
     {
-        HBRUSH hBrush = CreateSolidBrush(Parallelogram::color);
-        HBRUSH hOld = (HBRUSH)SelectObject(hdc, hBrush);
-        SetBkMode(hdc, TRANSPARENT);
+        HPEN hPen = CreatePen(PS_SOLID, 2, Parallelogram::color);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
         POINT pts[4] = {pg.A, pg.B, pg.C, pg.D};
         Polygon(hdc, pts, 4);
-        SelectObject(hdc, hOld);
-        DeleteObject(hBrush);
+        SelectObject(hdc, hOldPen);
+        SelectObject(hdc, hOldBrush);
+        DeleteObject(hPen);
     }
     // Draw existing rhombuses
     for(auto &rh: rhombuses)
     {
-        HBRUSH hBrush = CreateSolidBrush(Rhombus::color);
-        HBRUSH hOld = (HBRUSH)SelectObject(hdc, hBrush);
-        SetBkMode(hdc, TRANSPARENT);
+        HPEN hPen = CreatePen(PS_SOLID, 2, Rhombus::color);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
         POINT pts[4] = {rh.A, rh.B, rh.C, rh.D};
         Polygon(hdc, pts, 4);
-        SelectObject(hdc, hOld);
-        DeleteObject(hBrush);
+        SelectObject(hdc, hOldPen);
+        SelectObject(hdc, hOldBrush);
+        DeleteObject(hPen);
     }
     // Draw existing curves
     for(auto &cur: curves)
