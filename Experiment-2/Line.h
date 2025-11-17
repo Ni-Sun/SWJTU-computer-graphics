@@ -12,6 +12,7 @@ struct Line
 {
     int left, right, button, top;
     POINT s,e;
+    bool dashed = false;
     double a,b,c;   // ax + by + c = 0
     static RECT rect;
     static COLORREF color;

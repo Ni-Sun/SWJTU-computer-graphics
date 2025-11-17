@@ -13,6 +13,12 @@ extern std::vector<class Parallelogram> parallelograms;
 extern std::vector<class Rhombus> rhombuses;
 extern std::vector<class Bezier> beziers;
 
+// Forward declaration for Circle to be used in isInsideCircle
+struct Circle;
+
+// Helper functions defined in Fill.cpp
+bool isInsideCircle(const POINT& p, const Circle& c);
+bool isInsidePolygon(const POINT& p, const std::vector<POINT>& polygon);
 
 const COLORREF FILL_COLOR = RGB(211, 211, 211); // Light gray
 

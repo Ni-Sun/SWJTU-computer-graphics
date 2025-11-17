@@ -16,6 +16,7 @@
 #include "Select_perp.h"
 #include "Bezier.h"
 #include "Fill.h"
+#include "Select_linestyle.h"
 
 extern vector<Line> lines;
 extern vector<Circle> circles;
@@ -80,6 +81,7 @@ void Draw_Title(HWND hWnd, HDC hdc)
     draw(Bezier::color, Bezier::rect, L"Bezier");
     draw(scanline_button_color, scanline_button_rect, L"扫描线");
     draw(seed_button_color, seed_button_rect, L"种子");
+    draw(linestyle_button_color, linestyle_button_rect, L"修改线型");
     // draw()
     // 恢复并删除临时字体//
     SelectObject(hdc, hOldFont);
@@ -96,7 +98,7 @@ void Show_graphics(HWND hWnd, HDC hdc)
     vector<POINT> arr;
     for(auto &l: lines)
     {
-        HPEN hPen = CreatePen(PS_SOLID, 2, Line::color);
+        HPEN hPen = CreatePen(l.dashed ? PS_DASH : PS_SOLID, 2, Line::color);
         HPEN hOld = (HPEN)SelectObject(hdc, hPen);
         MoveToEx(hdc, l.s.x, l.s.y, nullptr);
         LineTo(hdc, l.e.x, l.e.y);
@@ -105,7 +107,7 @@ void Show_graphics(HWND hWnd, HDC hdc)
     }
     for(auto &cir: circles)
     {
-        HPEN hPen = CreatePen(PS_SOLID, 2, Circle::color);
+        HPEN hPen = CreatePen(cir.dashed ? PS_DASH : PS_SOLID, 2, Circle::color);
         HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
         HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
         Ellipse(hdc, cir.O.x - cir.r, cir.O.y - cir.r, cir.O.x + cir.r, cir.O.y + cir.r);

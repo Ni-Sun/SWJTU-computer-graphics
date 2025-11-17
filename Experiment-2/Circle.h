@@ -12,6 +12,7 @@ struct Circle
 {
     POINT O;    // 圆心
     int r;      // 半径
+    bool dashed = false;
     static RECT rect;
     static COLORREF color;
     static RECT midpoint_rect;

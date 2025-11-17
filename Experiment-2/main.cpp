@@ -21,6 +21,7 @@
 #include "Bezier.h"
 #include "Show.h"
 #include "Fill.h"
+#include "Select_linestyle.h"
 // #define DEBUG
 #include "debug.h"
 using namespace std;
@@ -281,8 +282,51 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             note(21, "Seed Fill");
         }
+        else if(PtInRect(&linestyle_button_rect, bt))
+        {
+            note(22, "Modify Line Style");
+        }
         else
         {
+            if(state == 22) // Modify Line Style mode
+            {
+                bool found = false;
+                // Iterate in reverse to select the top-most shape
+                for(int i = (int)lines.size() - 1; i >= 0; --i)
+                {
+                    auto &l = lines[i];
+                    // Use a slightly larger bounding box for easier selection
+                    RECT bbox = {l.left - 5, l.button - 5, l.right + 5, l.top + 5};
+                    if(PtInRect(&bbox, bt))
+                    {
+                        l.dashed = true;
+                        found = true;
+                        break; 
+                    }
+                }
+                if(!found)
+                {
+                    for(int i = (int)circles.size() - 1; i >= 0; --i)
+                    {
+                        auto &c = circles[i];
+                        long dx = bt.x - c.O.x;
+                        long dy = bt.y - c.O.y;
+                        if(dx * dx + dy * dy <= (long)c.r * (long)c.r)
+                        {
+                            c.dashed = true;
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if(found)
+                {
+                    state = -1; // Reset state after modification
+                    InvalidateRect(hWnd, NULL, TRUE);
+                }
+                break; // Consume the click
+            }
             if(state==6){ // 显示圆心模式
                 overlay_show = false;
                 bool found=false;
@@ -400,17 +444,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             for(int i=(int)lines.size()-1;i>=0 && !found;--i){
                 auto &L=lines[i];
                 RECT bbox = {L.left-5, L.button-5, L.right+5, L.top+5};
-                if(PtInRect(&bbox, bt)) { selected_type=0; selected_index=i; found=true; InvalidateRect(hWnd,NULL,TRUE); break; }
+                if(PtInRect(&bbox, bt)) { selected_type=0; selected_index=i; found=true; }
             }
             for(int i=(int)circles.size()-1;i>=0 && !found;--i){
                 auto &C=circles[i];
                 RECT bbox = {C.O.x - C.r -5, C.O.y - C.r -5, C.O.x + C.r +5, C.O.y + C.r +5};
-                if(PtInRect(&bbox, bt)) { selected_type=1; selected_index=i; found=true; InvalidateRect(hWnd,NULL,TRUE); break; }
+                if(PtInRect(&bbox, bt)) { selected_type=1; selected_index=i; found=true; }
             }
             for(int i=(int)rects.size()-1;i>=0 && !found;--i){
                 auto &R=rects[i];
                 RECT bbox = {min(R.left,R.right)-5, min(R.bottom,R.top)-5, max(R.left,R.right)+5, max(R.bottom,R.top)+5};
-                if(PtInRect(&bbox, bt)) { selected_type=2; selected_index=i; found=true; InvalidateRect(hWnd,NULL,TRUE); break; }
+                if(PtInRect(&bbox, bt)) { selected_type=2; selected_index=i; found=true; }
             }
             for(int i=(int)curves.size()-1;i>=0 && !found;--i){
                 auto &C=curves[i];
@@ -419,7 +463,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 int b = min({C.A.y, C.B.y, C.C.y})-5;
                 int t = max({C.A.y, C.B.y, C.C.y})+5;
                 RECT bbox = {l,b,r,t};
-                if(PtInRect(&bbox, bt)) { selected_type=3; selected_index=i; found=true; InvalidateRect(hWnd,NULL,TRUE); break; }
+                if(PtInRect(&bbox, bt)) { selected_type=3; selected_index=i; found=true; }
             }
             for(int i=(int)polylines.size()-1;i>=0 && !found;--i){
                 auto &P=polylines[i];
@@ -427,7 +471,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 LONG lx = P.p[0].x, rx = P.p[0].x, by = P.p[0].y, ty = P.p[0].y;
                 for(auto &pt:P.p){ lx = min<long>(lx, pt.x); rx = max<long>(rx, pt.x); by = min<long>(by, pt.y); ty = max<long>(ty, pt.y); }
                 RECT bbox = {lx-5,by-5,rx+5,ty+5};
-                if(PtInRect(&bbox, bt)) { selected_type=4; selected_index=i; found=true; InvalidateRect(hWnd,NULL,TRUE); break; }
+                if(PtInRect(&bbox, bt)) { selected_type=4; selected_index=i; found=true; }
             }
             //种子填充法问题：在封闭曲线范围外能够画图
             for(int i=(int)triangles.size()-1;i>=0 && !found;--i){
@@ -437,7 +481,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 int by = min({T.A.y, T.B.y, T.C.y}) - 5;
                 int ty = max({T.A.y, T.B.y, T.C.y}) + 5;
                 RECT bbox = {lx, by, rx, ty};
-                if(PtInRect(&bbox, bt)) { selected_type=8; selected_index=i; found=true; InvalidateRect(hWnd,NULL,TRUE); break; }
+                if(PtInRect(&bbox, bt)) { selected_type=8; selected_index=i; found=true; }
             }
             for(int i=(int)parallelograms.size()-1;i>=0 && !found;--i){
                 auto &P = parallelograms[i];
@@ -446,7 +490,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 int by = min({P.A.y, P.B.y, P.C.y, P.D.y}) - 5;
                 int ty = max({P.A.y, P.B.y, P.C.y, P.D.y}) + 5;
                 RECT bbox = {lx, by, rx, ty};
-                if(PtInRect(&bbox, bt)) { selected_type=9; selected_index=i; found=true; InvalidateRect(hWnd,NULL,TRUE); break; }
+                if(PtInRect(&bbox, bt)) { selected_type=9; selected_index=i; found=true; }
             }
             for(int i=(int)rhombuses.size()-1;i>=0 && !found;--i){
                 auto &rh = rhombuses[i];
@@ -455,26 +499,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 int by = min({rh.A.y, rh.B.y, rh.C.y, rh.D.y}) - 5;
                 int ty = max({rh.A.y, rh.B.y, rh.C.y, rh.D.y}) + 5;
                 RECT bbox = {lx, by, rx, ty};
-                if(PtInRect(&bbox, bt)) { selected_type=11; selected_index=i; found=true; InvalidateRect(hWnd,NULL,TRUE); break; }
+                if(PtInRect(&bbox, bt)) { selected_type=11; selected_index=i; found=true; }
             }
-            // 如果选择更改为不同的图元，请复制原始图元，以便立即拖动
-            if(found){
-                if(!(selected_type==preSelType && selected_index==preSelIndex)){
-                    // 新选择，而不是单击相同的图元
-                    possibleToggle = false;
-                    switch(selected_type){
-                        case 0: if(selected_index < (int)lines.size()) origLine = lines[selected_index]; break;
-                        case 1: if(selected_index < (int)circles.size()) origCircle = circles[selected_index]; break;
-                        case 2: if(selected_index < (int)rects.size()) origRect = rects[selected_index]; break;
-                        case 3: if(selected_index < (int)curves.size()) origCurve = curves[selected_index]; break;
-                        case 4: if(selected_index < (int)polylines.size()) origPoly = polylines[selected_index]; break;
-                        case 11: if(selected_index < (int)rhombuses.size()) origRhombus = rhombuses[selected_index]; break;
-                    }
+            
+            if(found) {
+                if (state == 20 || state == 21) { // Fill modes
+                    HDC hdc = GetDC(hWnd);
+                    fillShape(hdc, selected_type, selected_index, state == 20, bt);
+                    ReleaseDC(hWnd, hdc);
+                    state = -1; // Reset state after filling
+                    selected_type = -1; // Deselect
+                    selected_index = -1;
                 } else {
-                    // 单击了相同的选定图元：如果未拖动，则允许在鼠标弹起时切换
-                    possibleToggle = true;
+                    // 如果选择更改为不同的图元，请复制原始图元，以便立即拖动
+                    if(!(selected_type==preSelType && selected_index==preSelIndex)){
+                        // 新选择，而不是单击相同的图元
+                        possibleToggle = false;
+                        switch(selected_type){
+                            case 0: if(selected_index < (int)lines.size()) origLine = lines[selected_index]; break;
+                            case 1: if(selected_index < (int)circles.size()) origCircle = circles[selected_index]; break;
+                            case 2: if(selected_index < (int)rects.size()) origRect = rects[selected_index]; break;
+                            case 3: if(selected_index < (int)curves.size()) origCurve = curves[selected_index]; break;
+                            case 4: if(selected_index < (int)polylines.size()) origPoly = polylines[selected_index]; break;
+                            case 11: if(selected_index < (int)rhombuses.size()) origRhombus = rhombuses[selected_index]; break;
+                        }
+                    } else {
+                        // 单击了相同的选定图元：如果未拖动，则允许在鼠标弹起时切换
+                        possibleToggle = true;
+                    }
                 }
-                break; // 选择完成，跳过下面的绘图创建
+                InvalidateRect(hWnd, NULL, TRUE);
+                break; // 选择或填充完成，跳过下面的绘图创建
             }
 
             if(arr.size()==2 && state==0)
@@ -512,14 +567,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             if(state==5)   // 在交点附近
                 Show_near_by_point(hWnd,bt);
 
-            if (state == 20 || state == 21) { // Fill modes
-                if (selected_type != -1 && selected_index >= 0) {
-                    HDC hdc = GetDC(hWnd);
-                    fillShape(hdc, selected_type, selected_index, state == 20, bt);
-                    ReleaseDC(hWnd, hdc);
-                    state = -1; // Reset state after filling
-                }
-            }
             // string str="Cross points:\n";
             // for(auto P:Cross_points)
             //     str+=to_string(P)+"\n";
