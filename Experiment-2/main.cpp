@@ -89,8 +89,8 @@ static void SaveShapes(HWND hWnd)
 
     std::ofstream ofs(path);
     if(!ofs){ MessageBox(hWnd, "无法创建文件", "Error", MB_OK); return; }
-    for(auto &l: lines){ ofs << "LINE " << l.s.x << ' ' << l.s.y << ' ' << l.e.x << ' ' << l.e.y << '\n'; }
-    for(auto &c: circles){ ofs << "CIRCLE " << c.O.x << ' ' << c.O.y << ' ' << c.r << '\n'; }
+    for(auto &l: lines){ ofs << "LINE " << l.s.x << ' ' << l.s.y << ' ' << l.e.x << ' ' << l.e.y << ' ' << l.dashed << '\n'; }
+    for(auto &c: circles){ ofs << "CIRCLE " << c.O.x << ' ' << c.O.y << ' ' << c.r << ' ' << c.dashed << '\n'; }
     for(auto &r: rects){ ofs << "RECT " << r.left << ' ' << r.right << ' ' << r.bottom << ' ' << r.top << '\n'; }
     for(auto &c: curves){ ofs << "CURVE " << c.A.x << ' ' << c.A.y << ' ' << c.B.x << ' ' << c.B.y << ' ' << c.C.x << ' ' << c.C.y << '\n'; }
     for(auto &t: triangles){ ofs << "TRIANGLE " << t.A.x << ' ' << t.A.y << ' ' << t.B.x << ' ' << t.B.y << ' ' << t.C.x << ' ' << t.C.y << '\n'; }
@@ -123,17 +123,20 @@ static void LoadShapes(HWND hWnd)
     if(!ifs){ MessageBox(hWnd, "无法打开所选文件", "Error", MB_OK); return; }
     lines.clear(); circles.clear(); rects.clear(); curves.clear(); polylines.clear(); Cross_points.clear();
     std::string cmd;
-    while(ifs >> cmd){
-        if(cmd=="LINE"){ int x1,y1,x2,y2; ifs>>x1>>y1>>x2>>y2; Line l; l.s={x1,y1}; l.e={x2,y2}; l.left=min(x1,x2); l.right=max(x1,x2); l.button=min(y1,y2); l.top=max(y1,y2); lines.push_back(l); }
-        else if(cmd=="CIRCLE"){ int ox,oy,r; ifs>>ox>>oy>>r; circles.emplace_back(POINT{ox,oy}, r); }
-        else if(cmd=="RECT"){ int l,r,b,t; ifs>>l>>r>>b>>t; Rect R; R.left=l; R.right=r; R.bottom=b; R.top=t; R.A={l,b}; R.B={r,t}; rects.push_back(R); }
-    else if(cmd=="CURVE"){ int x1,y1,x2,y2,x3,y3; ifs>>x1>>y1>>x2>>y2>>x3>>y3; curves.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}); }
-    else if(cmd=="TRIANGLE"){ int x1,y1,x2,y2,x3,y3; ifs>>x1>>y1>>x2>>y2>>x3>>y3; triangles.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}); }
-        else if(cmd=="POLY"){ size_t n; ifs>>n; Poly P; for(size_t i=0;i<n;i++){ int x,y; ifs>>x>>y; P.p.push_back({x,y}); } polylines.push_back(P); }
-    else if(cmd=="PARA"){ int x1,y1,x2,y2,x3,y3,x4,y4; ifs>>x1>>y1>>x2>>y2>>x3>>y3>>x4>>y4; parallelograms.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}, POINT{x4,y4}); }
-    else if(cmd=="RHOMBUS"){ int x1,y1,x2,y2,x3,y3,x4,y4; ifs>>x1>>y1>>x2>>y2>>x3>>y3>>x4>>y4; rhombuses.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}, POINT{x4,y4}); }
-    else if(cmd=="BEZIER"){ int x1,y1,x2,y2,x3,y3; ifs>>x1>>y1>>x2>>y2>>x3>>y3; beziers.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}); }
-        else{ std::string rest; std::getline(ifs, rest); }
+    std::string line_str;
+    while(std::getline(ifs, line_str)){
+        std::stringstream ss(line_str);
+        ss >> cmd;
+        if(cmd=="LINE"){ int x1,y1,x2,y2; bool dashed=false; ss>>x1>>y1>>x2>>y2>>dashed; Line l; l.s={x1,y1}; l.e={x2,y2}; l.left=min(x1,x2); l.right=max(x1,x2); l.button=min(y1,y2); l.top=max(y1,y2); l.dashed=dashed; lines.push_back(l); }
+        else if(cmd=="CIRCLE"){ int ox,oy,r; bool dashed=false; ss>>ox>>oy>>r>>dashed; circles.emplace_back(POINT{ox,oy}, r); circles.back().dashed = dashed; }
+        else if(cmd=="RECT"){ int l,r,b,t; ss>>l>>r>>b>>t; Rect R; R.left=l; R.right=r; R.bottom=b; R.top=t; R.A={l,b}; R.B={r,t}; rects.push_back(R); }
+    else if(cmd=="CURVE"){ int x1,y1,x2,y2,x3,y3; ss>>x1>>y1>>x2>>y2>>x3>>y3; curves.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}); }
+    else if(cmd=="TRIANGLE"){ int x1,y1,x2,y2,x3,y3; ss>>x1>>y1>>x2>>y2>>x3>>y3; triangles.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}); }
+        else if(cmd=="POLY"){ size_t n; ss>>n; Poly P; for(size_t i=0;i<n;i++){ int x,y; ss>>x>>y; P.p.push_back({x,y}); } polylines.push_back(P); }
+    else if(cmd=="PARA"){ int x1,y1,x2,y2,x3,y3,x4,y4; ss>>x1>>y1>>x2>>y2>>x3>>y3>>x4>>y4; parallelograms.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}, POINT{x4,y4}); }
+    else if(cmd=="RHOMBUS"){ int x1,y1,x2,y2,x3,y3,x4,y4; ss>>x1>>y1>>x2>>y2>>x3>>y3>>x4>>y4; rhombuses.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}, POINT{x4,y4}); }
+    else if(cmd=="BEZIER"){ int x1,y1,x2,y2,x3,y3; ss>>x1>>y1>>x2>>y2>>x3>>y3; beziers.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}); }
+        else{ continue; }
     }
     ifs.close();
     selected_type=-1; selected_index=-1;
@@ -473,7 +476,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 RECT bbox = {lx-5,by-5,rx+5,ty+5};
                 if(PtInRect(&bbox, bt)) { selected_type=4; selected_index=i; found=true; }
             }
-            //种子填充法问题：在封闭曲线范围外能够画图
+            //种子填充法
             for(int i=(int)triangles.size()-1;i>=0 && !found;--i){
                 auto &T = triangles[i];
                 int lx = min({T.A.x, T.B.x, T.C.x}) - 5;

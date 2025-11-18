@@ -98,7 +98,7 @@ void Show_graphics(HWND hWnd, HDC hdc)
     vector<POINT> arr;
     for(auto &l: lines)
     {
-        HPEN hPen = CreatePen(l.dashed ? PS_DASH : PS_SOLID, 2, Line::color);
+        HPEN hPen = CreatePen(l.dashed ? PS_DASH : PS_SOLID, l.dashed ? 1 : 2, Line::color);
         HPEN hOld = (HPEN)SelectObject(hdc, hPen);
         MoveToEx(hdc, l.s.x, l.s.y, nullptr);
         LineTo(hdc, l.e.x, l.e.y);
@@ -107,7 +107,7 @@ void Show_graphics(HWND hWnd, HDC hdc)
     }
     for(auto &cir: circles)
     {
-        HPEN hPen = CreatePen(cir.dashed ? PS_DASH : PS_SOLID, 2, Circle::color);
+        HPEN hPen = CreatePen(cir.dashed ? PS_DASH : PS_SOLID, cir.dashed ? 1 : 2, Circle::color);
         HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
         HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
         Ellipse(hdc, cir.O.x - cir.r, cir.O.y - cir.r, cir.O.x + cir.r, cir.O.y + cir.r);

@@ -1,5 +1,5 @@
 #include "Select_linestyle.h"
 
 // Define the properties for the "Modify Line Style" button
-RECT linestyle_button_rect = {580, 100, 650, 130};
+RECT linestyle_button_rect = {640, 530, 710, 560};
 COLORREF linestyle_button_color = RGB(220, 220, 180);
