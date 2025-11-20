@@ -17,6 +17,7 @@
 #include "Bezier.h"
 #include "Fill.h"
 #include "Select_linestyle.h"
+#include "Select_linewidth.h"
 
 extern vector<Line> lines;
 extern vector<Circle> circles;
@@ -82,6 +83,7 @@ void Draw_Title(HWND hWnd, HDC hdc)
     draw(scanline_button_color, scanline_button_rect, L"扫描线");
     draw(seed_button_color, seed_button_rect, L"种子");
     draw(linestyle_button_color, linestyle_button_rect, L"修改线型");
+    draw(linewidth_button_color, linewidth_button_rect, L"修改线宽");
     // draw()
     // 恢复并删除临时字体//
     SelectObject(hdc, hOldFont);

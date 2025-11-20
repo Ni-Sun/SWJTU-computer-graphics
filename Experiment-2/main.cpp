@@ -22,6 +22,7 @@
 #include "Show.h"
 #include "Fill.h"
 #include "Select_linestyle.h"
+#include "Select_linewidth.h"
 // #define DEBUG
 #include "debug.h"
 using namespace std;
@@ -289,8 +290,51 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             note(22, "Modify Line Style");
         }
+        else if(PtInRect(&linewidth_button_rect, bt))
+        {
+            note(23, "Modify Line Width");
+        }
         else
         {
+            if(state == 23) 
+            {
+                bool found = false;
+                for (int i = (int)lines.size() - 1; i >= 0; --i) {
+                    auto &l = lines[i];
+                    RECT bbox = {l.left - 5, l.button - 5, l.right + 5, l.top + 5};
+                    if (PtInRect(&bbox, bt)) {
+                        double dx = l.e.x - l.s.x;
+                        double dy = l.e.y - l.s.y;
+                        double length = sqrt(dx * dx + dy * dy);
+                        if (length == 0) continue;
+
+                        double nx = -dy / length;
+                        double ny = dx / length;
+
+                        const int half_width = 5;
+                        std::vector<POINT> vertices;
+                        vertices.push_back({(long)(l.s.x + half_width * nx), (long)(l.s.y + half_width * ny)});
+                        vertices.push_back({(long)(l.e.x + half_width * nx), (long)(l.e.y + half_width * ny)});
+                        vertices.push_back({(long)(l.e.x - half_width * nx), (long)(l.e.y - half_width * ny)});
+                        vertices.push_back({(long)(l.s.x - half_width * nx), (long)(l.s.y - half_width * ny)});
+                        
+                        HDC hdc = GetDC(hWnd);
+                        scanlineFill(hdc, vertices, RGB(255, 255, 0)); // Yellow
+                        ReleaseDC(hWnd, hdc);
+
+                        // lines.erase(lines.begin() + i); // Optionally remove the original line
+
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) {
+                    state = -1; // Reset state
+                    InvalidateRect(hWnd, NULL, TRUE);
+                }
+                break; // Consume the click
+            }
             if(state == 22) // Modify Line Style mode
             {
                 bool found = false;

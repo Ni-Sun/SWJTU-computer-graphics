@@ -10,14 +10,14 @@
 #include <vector>
 #include <list>
 
-// Helper function to check if a point is inside a circle
+// 根据点到c圆心距离判断是否在圆内，用于检查选中
 bool isInsideCircle(const POINT& p, const Circle& c) {
     double dx = p.x - c.O.x;
     double dy = p.y - c.O.y;
     return (dx * dx + dy * dy) < (c.r * c.r);
 }
 
-// Helper function to check if a point is inside a polygon using the ray-casting algorithm
+// 判断p是否在折线段之间
 bool isInsidePolygon(const POINT& p, const std::vector<POINT>& polygon) {
     if (polygon.size() < 3) return false;
     bool inside = false;
@@ -36,7 +36,6 @@ COLORREF scanline_button_color = RGB(211, 211, 211);
 RECT seed_button_rect = {570, 530, 640, 560};
 COLORREF seed_button_color = RGB(211, 211, 211);
 
-// Define the global vector for filled shapes
 std::vector<FilledShape> filled_shapes;
 
 struct Edge {
@@ -45,7 +44,7 @@ struct Edge {
     double dx;
     Edge* next;
 };
-
+//扫描线填充法
 void scanlineFill(HDC hdc, const std::vector<POINT>& vertices, COLORREF fillColor) {
     if (vertices.size() < 3) return;
 
@@ -140,10 +139,10 @@ void fillShape(HDC hdc, int shape_type, int shape_index, bool use_scanline, cons
     std::vector<POINT> vertices;
     COLORREF boundaryColor = 0;
 
-    // Check if the shape is already filled
+    // 已经涂色，跳过
     for (const auto& filled : filled_shapes) {
         if (filled.type == shape_type && filled.index == shape_index) {
-            return; // Already filled, do nothing
+            return; 
         }
     }
 
@@ -151,6 +150,7 @@ void fillShape(HDC hdc, int shape_type, int shape_index, bool use_scanline, cons
 
     switch (shape_type) {
         case 1: { // Circle
+            //遍历圆向量，依次检查每个圆
             if (shape_index < circles.size()) {
                 Circle& c = circles[shape_index];
                 boundaryColor = Circle::color;
@@ -291,7 +291,7 @@ void redrawFill(HDC hdc, const FilledShape& shape)
     if (shape.use_scanline && !vertices.empty()) {
         scanlineFill(hdc, vertices, FILL_COLOR);
     } else if (!shape.use_scanline && !vertices.empty()) {
-        // Use Polygon to redraw filled polygons
+       
         Polygon(hdc, vertices.data(), vertices.size());
     }
 
