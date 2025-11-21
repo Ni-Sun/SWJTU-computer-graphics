@@ -335,6 +335,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 if (found) {
                     state = -1; // Reset state
                     InvalidateRect(hWnd, NULL, TRUE);
+                    break; // Consume the click
+                }
+
+                if(!found) {
+                    for (int i = (int)circles.size() - 1; i >= 0; --i) {
+                        auto &c = circles[i];
+                        long dx = bt.x - c.O.x;
+                        long dy = bt.y - c.O.y;
+                        if (dx * dx + dy * dy <= (long)c.r * c.r) {
+                            // Create a ring by adding two new circles
+                            if (c.r > 5) {
+                                circles.emplace_back(c.O, c.r - 5);
+                            }
+                            circles.emplace_back(c.O, c.r + 5);
+
+                            // Remove the original circle
+                            circles.erase(circles.begin() + i);
+
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (found) {
+                    state = -1; // Reset state
+                    InvalidateRect(hWnd, NULL, TRUE);
                 }
                 break; // Consume the click
             }

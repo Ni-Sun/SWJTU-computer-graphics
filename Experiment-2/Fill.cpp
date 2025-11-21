@@ -44,7 +44,7 @@ struct Edge {
     double dx;
     Edge* next;
 };
-//扫描线填充法
+//栅栏扫描线填充法
 void scanlineFill(HDC hdc, const std::vector<POINT>& vertices, COLORREF fillColor) {
     if (vertices.size() < 3) return;
 

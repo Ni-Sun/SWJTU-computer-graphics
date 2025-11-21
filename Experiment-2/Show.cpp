@@ -80,7 +80,7 @@ void Draw_Title(HWND hWnd, HDC hdc)
     draw(Circle::midpoint_color, Circle::midpoint_rect, L"中点，圆");
     draw(Circle::bresenham_color, Circle::bresenham_rect, L"Bres，圆");
     draw(Bezier::color, Bezier::rect, L"Bezier");
-    draw(scanline_button_color, scanline_button_rect, L"扫描线");
+    draw(scanline_button_color, scanline_button_rect, L"栅栏");
     draw(seed_button_color, seed_button_rect, L"种子");
     draw(linestyle_button_color, linestyle_button_rect, L"修改线型");
     draw(linewidth_button_color, linewidth_button_rect, L"修改线宽");
