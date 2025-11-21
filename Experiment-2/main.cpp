@@ -306,22 +306,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         double dx = l.e.x - l.s.x;
                         double dy = l.e.y - l.s.y;
                         double length = sqrt(dx * dx + dy * dy);
-                        if (length == 0) continue;
+                        if (length < 1e-6) continue;
 
                         double nx = -dy / length;
                         double ny = dx / length;
 
                         const int half_width = 5;
-                        std::vector<POINT> vertices;
-                        vertices.push_back({(long)(l.s.x + half_width * nx), (long)(l.s.y + half_width * ny)});
-                        vertices.push_back({(long)(l.e.x + half_width * nx), (long)(l.e.y + half_width * ny)});
-                        vertices.push_back({(long)(l.e.x - half_width * nx), (long)(l.e.y - half_width * ny)});
-                        vertices.push_back({(long)(l.s.x - half_width * nx), (long)(l.s.y - half_width * ny)});
-                        
+                        POINT v1 = {(long)(l.s.x + half_width * nx), (long)(l.s.y + half_width * ny)};
+                        POINT v2 = {(long)(l.e.x + half_width * nx), (long)(l.e.y + half_width * ny)};
+                        POINT v3 = {(long)(l.e.x - half_width * nx), (long)(l.e.y - half_width * ny)};
+                        POINT v4 = {(long)(l.s.x - half_width * nx), (long)(l.s.y - half_width * ny)};
+                                                // 创建一个持久化的平行四边形来代表粗线
+                        parallelograms.emplace_back(v1, v2, v3, v4);
                         HDC hdc = GetDC(hWnd);
-                        scanlineFill(hdc, vertices, RGB(255, 255, 0)); // Yellow
+                        std::vector<POINT> parallelogram_vertices = {v1, v2, v3, v4};
+                        scanlineFill(hdc, parallelogram_vertices, RGB(192, 192, 192));
                         ReleaseDC(hWnd, hdc);
-
+                      
+                        // 删除原始直线
+                        lines.erase(lines.begin() + i);
                         // lines.erase(lines.begin() + i); // Optionally remove the original line
 
                         found = true;
