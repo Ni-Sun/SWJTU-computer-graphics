@@ -1,6 +1,5 @@
 #pragma once
 #include <windows.h>
-
-// Declare the properties for the "Modify Line Style" button
+//extern声明，避免反复引用
 extern RECT linestyle_button_rect;
 extern COLORREF linestyle_button_color;

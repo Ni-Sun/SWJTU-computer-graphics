@@ -1,6 +1,6 @@
 #pragma once
 #include <windows.h>
 
-// Declare the properties for the "Modify Line Width" button
+//避免反复引用
 extern RECT linewidth_button_rect;
 extern COLORREF linewidth_button_color;

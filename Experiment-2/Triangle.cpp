@@ -15,16 +15,15 @@ void Draw_triangle(HWND hWnd, vector<POINT> &arr)
     HBRUSH hOld = (HBRUSH)SelectObject(hdc, hBrush);
     SetBkMode(hdc, TRANSPARENT);
 
-    // Use two points as opposite corners of bounding box and create an isosceles triangle
+    // 三角形创建
     auto A = arr[0];
     auto B = arr[1];
     int l = min(A.x, B.x), r = max(A.x, B.x);
     int t = min(A.y, B.y), b = max(A.y, B.y);
-    POINT p1 = {(l + r) / 2, t}; // top center
-    POINT p2 = {l, b}; // bottom-left
-    POINT p3 = {r, b}; // bottom-right
+    POINT p1 = {(l + r) / 2, t}; 
+    POINT p2 = {l, b}; 
+    POINT p3 = {r, b}; 
 
-    // Draw filled polygon
     POINT pts[3] = {p1, p2, p3};
     Polygon(hdc, pts, 3);
 

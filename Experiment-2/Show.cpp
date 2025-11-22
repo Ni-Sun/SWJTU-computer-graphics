@@ -29,6 +29,22 @@ extern vector<Parallelogram> parallelograms;
 extern vector<Rhombus> rhombuses;
 extern vector<Bezier> beziers;
 
+// 用于“修改线宽”中，通过扫描线填充法填充的图形
+struct FilledRing {
+    POINT center;
+    int r_outer;
+    int r_inner;
+    COLORREF color;
+};
+extern vector<FilledRing> filled_rings;
+
+struct FilledParallelogram {
+    POINT v1, v2, v3, v4;
+    COLORREF color;
+};
+extern vector<FilledParallelogram> filled_parallelograms;
+
+
 // selection globals exposed from main.cpp
 extern int selected_type;
 extern int selected_index;
@@ -92,6 +108,45 @@ void Draw_Title(HWND hWnd, HDC hdc)
 
 void Show_graphics(HWND hWnd, HDC hdc)
 {
+    // Draw custom filled parallelograms (Red)
+    for (auto &fp : filled_parallelograms) {
+        std::vector<POINT> vertices = {fp.v1, fp.v2, fp.v3, fp.v4};
+        scanlineFill(hdc, vertices, fp.color);
+    }
+
+    // Draw custom filled rings (Yellow)
+    for (auto &fr : filled_rings) {
+        int r_outer = fr.r_outer;
+        int r_inner = fr.r_inner;
+        POINT center = fr.center;
+        COLORREF color = fr.color;
+
+        int y_min = center.y - r_outer;
+        int y_max = center.y + r_outer;
+        for (int y = y_min; y <= y_max; ++y) {
+            double dy_sq = (double)(y - center.y) * (y - center.y);
+            double r_outer_sq = (double)r_outer * r_outer;
+
+            if (r_outer_sq >= dy_sq) {
+                double dx_outer = sqrt(r_outer_sq - dy_sq);
+                int x_outer_left = (int)round(center.x - dx_outer);
+                int x_outer_right = (int)round(center.x + dx_outer);
+
+                double r_inner_sq = (double)r_inner * r_inner;
+                if (r_inner > 0 && r_inner_sq > dy_sq) {
+                    double dx_inner = sqrt(r_inner_sq - dy_sq);
+                    int x_inner_left = (int)round(center.x - dx_inner);
+                    int x_inner_right = (int)round(center.x + dx_inner);
+                    
+                    for (int x = x_outer_left; x < x_inner_left; ++x) SetPixel(hdc, x, y, color);
+                    for (int x = x_inner_right + 1; x <= x_outer_right; ++x) SetPixel(hdc, x, y, color);
+                } else {
+                    for (int x = x_outer_left; x <= x_outer_right; ++x) SetPixel(hdc, x, y, color);
+                }
+            }
+        }
+    }
+
     // Redraw filled shapes for persistence
     for (const auto& shape : filled_shapes) {
         redrawFill(hdc, shape);
@@ -124,7 +179,7 @@ void Show_graphics(HWND hWnd, HDC hdc)
         SetBkMode(hdc, TRANSPARENT);
         TextOutW(hdc, overlay_pt.x + 10, overlay_pt.y + 10, overlay_text.c_str(), (int)overlay_text.length());
     }
-    // Draw existing rects
+    // 矩形
     for(auto &r: rects)
     {
         HPEN hPen = CreatePen(PS_SOLID, 2, Rect::color);
@@ -135,7 +190,7 @@ void Show_graphics(HWND hWnd, HDC hdc)
         SelectObject(hdc, hOldBrush);
         DeleteObject(hPen);
     }
-    // Draw existing triangles
+    // 
     for(auto &tri: triangles)
     {
         HPEN hPen = CreatePen(PS_SOLID, 2, Triangle::color);
@@ -147,7 +202,7 @@ void Show_graphics(HWND hWnd, HDC hdc)
         SelectObject(hdc, hOldBrush);
         DeleteObject(hPen);
     }
-    // Draw existing parallelograms
+    // 平行四边形
     for(auto &pg: parallelograms)
     {
         HPEN hPen = CreatePen(PS_SOLID, 2, Parallelogram::color);
@@ -159,7 +214,7 @@ void Show_graphics(HWND hWnd, HDC hdc)
         SelectObject(hdc, hOldBrush);
         DeleteObject(hPen);
     }
-    // Draw existing rhombuses
+    // 
     for(auto &rh: rhombuses)
     {
         HPEN hPen = CreatePen(PS_SOLID, 2, Rhombus::color);
@@ -171,7 +226,7 @@ void Show_graphics(HWND hWnd, HDC hdc)
         SelectObject(hdc, hOldBrush);
         DeleteObject(hPen);
     }
-    // Draw existing curves
+    // 曲线
     for(auto &cur: curves)
     {
         HPEN hPen = CreatePen(PS_SOLID, 2, Curve::color);
@@ -199,7 +254,7 @@ void Show_graphics(HWND hWnd, HDC hdc)
     }
     for(auto &pl:polylines)
     {
-        // Draw polyline points
+        // 折线，3个点
         if(pl.p.size()>=2){
             HPEN hPen = CreatePen(PS_SOLID, 2, Poly::color);
             HPEN hOld = (HPEN)SelectObject(hdc, hPen);
@@ -270,28 +325,28 @@ void Show_graphics(HWND hWnd, HDC hdc)
                     for(int x=l;x<=r;x++) LineTo(hdc, x, fun(x));
                 }
                 break;
-            case 8: // triangle
+            case 8: // 三角形
                 if(selected_index < (int)triangles.size()){
                     auto &T = triangles[selected_index];
                     POINT pts[3] = {T.A, T.B, T.C};
                     Polygon(hdc, pts, 3);
                 }
                 break;
-            case 9: // parallelogram
+            case 9: // 平行四边形
                 if(selected_index < (int)parallelograms.size()){
                     auto &P = parallelograms[selected_index];
                     POINT pts[4] = {P.A, P.B, P.C, P.D};
                     Polygon(hdc, pts, 4);
                 }
                 break;
-            case 11: // rhombus
+            case 11: // 菱形
                 if(selected_index < (int)rhombuses.size()){
                     auto &rh = rhombuses[selected_index];
                     POINT pts[4] = {rh.A, rh.B, rh.C, rh.D};
                     Polygon(hdc, pts, 4);
                 }
                 break;
-            case 4: // poly
+            case 4: // poly（折线）
                 if(selected_index < (int)polylines.size()){
                     auto &P = polylines[selected_index];
                     if(P.p.size()>=2){

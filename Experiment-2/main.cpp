@@ -41,6 +41,21 @@ vector<Triangle> triangles;
 vector<Parallelogram> parallelograms;
 vector<Rhombus> rhombuses;
 vector<Bezier> beziers;
+
+struct FilledRing {
+    POINT center;
+    int r_outer;
+    int r_inner;
+    COLORREF color;
+};
+vector<FilledRing> filled_rings;
+
+struct FilledParallelogram {
+    POINT v1, v2, v3, v4;
+    COLORREF color;
+};
+vector<FilledParallelogram> filled_parallelograms;
+
 vector<POINT> Cross_points; // 交点
 std::wstring overlay_text = L"";
 POINT overlay_pt = {0,0};
@@ -156,7 +171,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     RegisterClassW(&wc);
 
-    HWND hWnd = CreateWindowW(L"SimplePaint", L"WFY simple paint", WS_OVERLAPPEDWINDOW,CW_USEDEFAULT, CW_USEDEFAULT, 900, 600, NULL, NULL, hInstance, NULL);
+    HWND hWnd = CreateWindowW(L"SimplePaint", L"SimplePaint", WS_OVERLAPPEDWINDOW,CW_USEDEFAULT, CW_USEDEFAULT, 900, 600, NULL, NULL, hInstance, NULL);
 
     ShowWindow(hWnd, nCmdShow);
 
@@ -316,17 +331,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         POINT v2 = {(long)(l.e.x + half_width * nx), (long)(l.e.y + half_width * ny)};
                         POINT v3 = {(long)(l.e.x - half_width * nx), (long)(l.e.y - half_width * ny)};
                         POINT v4 = {(long)(l.s.x - half_width * nx), (long)(l.s.y - half_width * ny)};
-                                                // 创建一个持久化的平行四边形来代表粗线
-                        parallelograms.emplace_back(v1, v2, v3, v4);
-                        HDC hdc = GetDC(hWnd);
-                        std::vector<POINT> parallelogram_vertices = {v1, v2, v3, v4};
-                        scanlineFill(hdc, parallelogram_vertices, RGB(192, 192, 192));
-                        ReleaseDC(hWnd, hdc);
-                      
+                        
+                        // 创建一个持久化的红色填充平行四边形
+                        filled_parallelograms.push_back({v1, v2, v3, v4, RGB(255, 0, 0)});
+
                         // 删除原始直线
                         lines.erase(lines.begin() + i);
-                        // lines.erase(lines.begin() + i); // Optionally remove the original line
-
+                        
                         found = true;
                         break;
                     }
@@ -344,13 +355,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         long dx = bt.x - c.O.x;
                         long dy = bt.y - c.O.y;
                         if (dx * dx + dy * dy <= (long)c.r * c.r) {
-                            // Create a ring by adding two new circles
-                            if (c.r > 5) {
-                                circles.emplace_back(c.O, c.r - 5);
-                            }
-                            circles.emplace_back(c.O, c.r + 5);
+                            // 创建一个持久化的黄色填充圆环
+                            filled_rings.push_back({c.O, c.r + 5, (c.r > 5 ? c.r - 5 : 0), RGB(255, 255, 0)});
 
-                            // Remove the original circle
+                            // 删除原始圆
                             circles.erase(circles.begin() + i);
 
                             found = true;
@@ -360,19 +368,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
 
                 if (found) {
-                    state = -1; // Reset state
+                    state = -1; // 重置state，等待下次点击
                     InvalidateRect(hWnd, NULL, TRUE);
                 }
-                break; // Consume the click
+                break; // 用户没选中直线或圆，无效
             }
-            if(state == 22) // Modify Line Style mode
+            if(state == 22) // Modify 线型
             {
                 bool found = false;
-                // Iterate in reverse to select the top-most shape
+                //和前面state==23时，类似，先遍历直线，没有再遍历圆
                 for(int i = (int)lines.size() - 1; i >= 0; --i)
                 {
                     auto &l = lines[i];
-                    // Use a slightly larger bounding box for easier selection
+                    //允许选中一段误差
                     RECT bbox = {l.left - 5, l.button - 5, l.right + 5, l.top + 5};
                     if(PtInRect(&bbox, bt))
                     {
@@ -399,10 +407,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if(found)
                 {
-                    state = -1; // Reset state after modification
+                    state = -1; // 重置state，等待用户下一次按钮
                     InvalidateRect(hWnd, NULL, TRUE);
                 }
-                break; // Consume the click
+                break; // 说明用户没选中圆或直线
             }
             if(state==6){ // 显示圆心模式
                 overlay_show = false;
@@ -643,11 +651,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 Draw_bezier(hWnd,arr);
             if(state==5)   // 在交点附近
                 Show_near_by_point(hWnd,bt);
-
-            // string str="Cross points:\n";
-            // for(auto P:Cross_points)
-            //     str+=to_string(P)+"\n";
-            // debug(str);
         }
         break;
     }

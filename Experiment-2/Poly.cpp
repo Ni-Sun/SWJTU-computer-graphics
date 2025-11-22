@@ -15,5 +15,4 @@ void Draw_Poly(HWND hWnd, vector<POINT> &arr)
     arr.erase(arr.begin());
     DeleteObject(hPen);
     ReleaseDC(hWnd,hdc);
-    // polylines.emplace_back()     ??????
 }

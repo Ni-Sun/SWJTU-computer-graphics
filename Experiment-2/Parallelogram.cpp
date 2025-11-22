@@ -18,7 +18,7 @@ void Draw_parallelogram(HWND hWnd, vector<POINT> &arr)
     int l = min(P.x, Q.x), r = max(P.x, Q.x);
     int t = min(P.y, Q.y), b = max(P.y, Q.y);
     int w = r - l;
-    int shift = w/4; // shift top edge right by quarter width
+    int shift = w/4; 
 
     POINT a = {l + shift, t};
     POINT bpt = {r + shift, t};
