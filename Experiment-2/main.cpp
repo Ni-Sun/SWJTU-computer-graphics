@@ -113,7 +113,7 @@ static void SaveShapes(HWND hWnd)
     for(auto &p: polylines){ ofs << "POLY " << p.p.size(); for(auto &pt: p.p) ofs << ' ' << pt.x << ' ' << pt.y; ofs << '\n'; }
     for(auto &q: parallelograms){ ofs << "PARA " << q.A.x << ' ' << q.A.y << ' ' << q.B.x << ' ' << q.B.y << ' ' << q.C.x << ' ' << q.C.y << ' ' << q.D.x << ' ' << q.D.y << '\n'; }
     for(auto &rh: rhombuses){ ofs << "RHOMBUS " << rh.A.x << ' ' << rh.A.y << ' ' << rh.B.x << ' ' << rh.B.y << ' ' << rh.C.x << ' ' << rh.C.y << ' ' << rh.D.x << ' ' << rh.D.y << '\n'; }
-    for(auto &bz: beziers){ ofs << "BEZIER " << bz.A.x << ' ' << bz.A.y << ' ' << bz.B.x << ' ' << bz.B.y << ' ' << bz.C.x << ' ' << bz.C.y << '\n'; }
+    for(auto &bz: beziers){ ofs << "BEZIER " << bz.points.size(); for(auto &pt : bz.points) ofs << ' ' << pt.x << ' ' << pt.y; ofs << '\n'; }
     ofs.close();
 }
 
@@ -151,7 +151,7 @@ static void LoadShapes(HWND hWnd)
         else if(cmd=="POLY"){ size_t n; ss>>n; Poly P; for(size_t i=0;i<n;i++){ int x,y; ss>>x>>y; P.p.push_back({x,y}); } polylines.push_back(P); }
     else if(cmd=="PARA"){ int x1,y1,x2,y2,x3,y3,x4,y4; ss>>x1>>y1>>x2>>y2>>x3>>y3>>x4>>y4; parallelograms.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}, POINT{x4,y4}); }
     else if(cmd=="RHOMBUS"){ int x1,y1,x2,y2,x3,y3,x4,y4; ss>>x1>>y1>>x2>>y2>>x3>>y3>>x4>>y4; rhombuses.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}, POINT{x4,y4}); }
-    else if(cmd=="BEZIER"){ int x1,y1,x2,y2,x3,y3; ss>>x1>>y1>>x2>>y2>>x3>>y3; beziers.emplace_back(POINT{x1,y1}, POINT{x2,y2}, POINT{x3,y3}); }
+    else if(cmd=="BEZIER"){ size_t n; ss >> n; vector<POINT> pts; for(size_t i=0; i<n; ++i){ int x,y; ss>>x>>y; pts.push_back({x,y}); } beziers.emplace_back(pts); }
         else{ continue; }
     }
     ifs.close();
@@ -202,6 +202,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         
         Draw_Title(hWnd, hdc);
         Show_graphics(hWnd,hdc);
+
+        if (state == 16 && arr.size() > 0) {
+            
+            HPEN hPen = CreatePen(PS_DOT, 1, RGB(0, 0, 0));
+            HBRUSH hBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+            HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+            HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+
+            for(const auto& p : arr) {
+                Ellipse(hdc, p.x - 3, p.y - 3, p.x + 3, p.y + 3);
+            }
+            if (arr.size() > 1) {
+                MoveToEx(hdc, arr[0].x, arr[0].y, NULL);
+                for(size_t i = 1; i < arr.size(); ++i) {
+                    LineTo(hdc, arr[i].x, arr[i].y);
+                }
+            }
+            SelectObject(hdc, hOldPen);
+            SelectObject(hdc, hOldBrush);
+            DeleteObject(hPen);
+        }
 
         EndPaint(hWnd, &ps);
         break;
@@ -647,8 +668,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 Draw_midpoint_circle(hWnd,arr);
             if(arr.size()==2 && state==15)
                 Draw_bresenham_circle(hWnd,arr);
-            if(arr.size()==3 && state==16)
-                Draw_bezier(hWnd,arr);
             if(state==5)   // 在交点附近
                 Show_near_by_point(hWnd,bt);
         }
@@ -812,7 +831,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_RBUTTONDOWN:
         {
-            // 如果已选择，则开始旋转
+            if (state == 16) {
+                if (arr.size() >= 2) {
+                    Draw_bezier(hWnd, arr); // Creates the Bezier object and clears arr
+                }
+                state = -1; // Reset state
+                arr.clear(); // Ensure arr is cleared even if there are not enough points
+                InvalidateRect(hWnd, NULL, TRUE);
+                break; // Consume the right-click
+            }
+
+            // If selected, start rotation
             POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
             if(selected_type!=-1 && selected_index>=0){
                 // 设置旋转：存储原始几何图形并将轴心设置在图元中心

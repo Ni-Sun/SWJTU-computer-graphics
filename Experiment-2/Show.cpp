@@ -106,15 +106,30 @@ void Draw_Title(HWND hWnd, HDC hdc)
     DeleteObject(hFont);
 }
 
+
+POINT de_casteljau_recursive(const vector<POINT>& points, double t) {
+    if (points.size() == 1) {
+        return points[0];
+    }
+    vector<POINT> new_points;
+    for (size_t i = 0; i < points.size() - 1; ++i) {
+        POINT p;
+        p.x = (LONG)((1.0 - t) * points[i].x + t * points[i+1].x);
+        p.y = (LONG)((1.0 - t) * points[i].y + t * points[i+1].y);
+        new_points.push_back(p);
+    }
+    return de_casteljau_recursive(new_points, t);
+}
+
 void Show_graphics(HWND hWnd, HDC hdc)
 {
-    // Draw custom filled parallelograms (Red)
+    // 红色填充直线
     for (auto &fp : filled_parallelograms) {
         std::vector<POINT> vertices = {fp.v1, fp.v2, fp.v3, fp.v4};
         scanlineFill(hdc, vertices, fp.color);
     }
 
-    // Draw custom filled rings (Yellow)
+    // 黄色填充圆
     for (auto &fr : filled_rings) {
         int r_outer = fr.r_outer;
         int r_inner = fr.r_inner;
@@ -147,7 +162,7 @@ void Show_graphics(HWND hWnd, HDC hdc)
         }
     }
 
-    // Redraw filled shapes for persistence
+    
     for (const auto& shape : filled_shapes) {
         redrawFill(hdc, shape);
     }
@@ -267,18 +282,35 @@ void Show_graphics(HWND hWnd, HDC hdc)
 
     for(auto &bz: beziers)
     {
+        if (bz.points.empty()) continue;
+
         HPEN hPen = CreatePen(PS_SOLID, 2, Bezier::color);
         HPEN hOld = (HPEN)SelectObject(hdc, hPen);
-        POINT p0 = bz.A;
-        POINT p1 = bz.B;
-        POINT p2 = bz.C;
+        
+        // Also draw the control polygon
+        if (bz.points.size() >= 2) {
+            HPEN hGrayPen = CreatePen(PS_DOT, 1, RGB(128, 128, 128));
+            HPEN hOldGray = (HPEN)SelectObject(hdc, hGrayPen);
+            MoveToEx(hdc, bz.points[0].x, bz.points[0].y, NULL);
+            for(size_t i = 1; i < bz.points.size(); ++i) {
+                LineTo(hdc, bz.points[i].x, bz.points[i].y);
+            }
+            SelectObject(hdc, hOldGray);
+            DeleteObject(hGrayPen);
+        }
+        
+        // Draw the curve
+        SelectObject(hdc, hPen); // Select the main pen again
 
-        MoveToEx(hdc, p0.x, p0.y, nullptr);
-        for (double t = 0.01; t <= 1.0; t += 0.01)
-        {
-            double x = (1 - t) * (1 - t) * p0.x + 2 * t * (1 - t) * p1.x + t * t * p2.x;
-            double y = (1 - t) * (1 - t) * p0.y + 2 * t * (1 - t) * p1.y + t * t * p2.y;
-            LineTo(hdc, (int)x, (int)y);
+        if (!bz.points.empty()) {
+            POINT start_point = de_casteljau_recursive(bz.points, 0.0);
+            MoveToEx(hdc, start_point.x, start_point.y, nullptr);
+
+            for (double t = 0.001; t <= 1.0; t += 0.001)
+            {
+                POINT p = de_casteljau_recursive(bz.points, t);
+                LineTo(hdc, p.x, p.y);
+            }
         }
         SelectObject(hdc, hOld);
         DeleteObject(hPen);

@@ -5,16 +5,15 @@ using namespace std;
 
 struct Bezier
 {
-    POINT A,B,C;
+    vector<POINT> points;
     static RECT rect;
     static COLORREF color;
     Bezier()
     {
-        A=B=C={0,0};
     }
-    Bezier(POINT a, POINT b, POINT c)
+    Bezier(const vector<POINT> &p)
     {
-        A=a, B=b, C=c;
+        points = p;
     }
 };
 

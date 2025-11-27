@@ -7,10 +7,10 @@ COLORREF Bezier::color = RGB(0, 0, 255);
 
 void Draw_bezier(HWND hWnd, vector<POINT> &arr)
 {
-    if (arr.size() < 3) {
+    if (arr.size() < 2) { 
         return;
     }
-    beziers.emplace_back(arr[0], arr[1], arr[2]);
+    beziers.emplace_back(arr);
     arr.clear();
     InvalidateRect(hWnd, NULL, TRUE);
 }
