@@ -18,6 +18,7 @@
 #include "Fill.h"
 #include "Select_linestyle.h"
 #include "Select_linewidth.h"
+#include "Polygon.h"
 
 extern vector<Line> lines;
 extern vector<Circle> circles;
@@ -28,6 +29,7 @@ extern vector<Triangle> triangles;
 extern vector<Parallelogram> parallelograms;
 extern vector<Rhombus> rhombuses;
 extern vector<Bezier> beziers;
+extern vector<MyPolygon> mypolygons;
 
 // 用于“修改线宽”中，通过扫描线填充法填充的图形
 struct FilledRing {
@@ -100,6 +102,7 @@ void Draw_Title(HWND hWnd, HDC hdc)
     draw(seed_button_color, seed_button_rect, L"种子");
     draw(linestyle_button_color, linestyle_button_rect, L"修改线型");
     draw(linewidth_button_color, linewidth_button_rect, L"修改线宽");
+    draw(MyPolygon::color, MyPolygon::rect, L"多边形");
     // draw()
     // 恢复并删除临时字体//
     SelectObject(hdc, hOldFont);
@@ -275,6 +278,16 @@ void Show_graphics(HWND hWnd, HDC hdc)
             HPEN hOld = (HPEN)SelectObject(hdc, hPen);
             MoveToEx(hdc, pl.p[0].x, pl.p[0].y, NULL);
             for(size_t i=1;i<pl.p.size();++i) LineTo(hdc, pl.p[i].x, pl.p[i].y);
+            SelectObject(hdc, hOld);
+            DeleteObject(hPen);
+        }
+    }
+
+    for (auto& poly : mypolygons) {
+        if (poly.p.size() >= 2) {
+            HPEN hPen = CreatePen(PS_SOLID, 2, MyPolygon::color);
+            HPEN hOld = (HPEN)SelectObject(hdc, hPen);
+            Polygon(hdc, poly.p.data(), poly.p.size());
             SelectObject(hdc, hOld);
             DeleteObject(hPen);
         }

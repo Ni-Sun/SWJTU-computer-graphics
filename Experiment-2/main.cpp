@@ -23,6 +23,7 @@
 #include "Fill.h"
 #include "Select_linestyle.h"
 #include "Select_linewidth.h"
+#include "Polygon.h"
 // #define DEBUG
 #include "debug.h"
 using namespace std;
@@ -41,6 +42,7 @@ vector<Triangle> triangles;
 vector<Parallelogram> parallelograms;
 vector<Rhombus> rhombuses;
 vector<Bezier> beziers;
+vector<MyPolygon> mypolygons;
 
 struct FilledRing {
     POINT center;
@@ -225,6 +227,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
 
         EndPaint(hWnd, &ps);
+        if (state == 24 && arr.size() > 0) {
+            
+            HPEN hPen = CreatePen(PS_DOT, 1, RGB(0, 0, 0));
+            HBRUSH hBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+            HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+            HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+
+            for(const auto& p : arr) {
+                Ellipse(hdc, p.x - 3, p.y - 3, p.x + 3, p.y + 3);
+            }
+            if (arr.size() > 1) {
+                MoveToEx(hdc, arr[0].x, arr[0].y, NULL);
+                for(size_t i = 1; i < arr.size(); ++i) {
+                    LineTo(hdc, arr[i].x, arr[i].y);
+                }
+            }
+            SelectObject(hdc, hOldPen);
+            SelectObject(hdc, hOldBrush);
+            DeleteObject(hPen);
+        }
         break;
     }
     case WM_LBUTTONDOWN:
@@ -330,6 +352,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             note(23, "Modify Line Width");
         }
+        else if(PtInRect(&MyPolygon::rect,bt))
+            note(24,"Polygon");
         else
         {
             if(state == 23) 
@@ -518,8 +542,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             double d = sqrt(d_sq);
                             double theta = atan2(dy_dist, dx_dist);
                             double alpha = acos((double)C.r / d);
-                            double ang1 = theta + alpha;
-                            double ang2 = theta - alpha;
+                            double ang1 = theta + alpha;//上半夹角与x轴夹角
+                            double ang2 = theta - alpha;//下半夹角与x轴夹角
                             
                             POINT T1 = { (int)round(ox + C.r * cos(ang1)), (int)round(oy + C.r * sin(ang1)) };
                             POINT T2 = { (int)round(ox + C.r * cos(ang2)), (int)round(oy + C.r * sin(ang2)) };
@@ -831,6 +855,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_RBUTTONDOWN:
         {
+            if (state == 24) {
+                if (arr.size() >= 3) {
+                    mypolygons.push_back(MyPolygon(arr));
+                }
+                state = -1; // Reset state
+                arr.clear(); // Ensure arr is cleared
+                InvalidateRect(hWnd, NULL, TRUE);
+                break; // Consume the right-click
+            }
             if (state == 16) {
                 if (arr.size() >= 2) {
                     Draw_bezier(hWnd, arr); // Creates the Bezier object and clears arr
