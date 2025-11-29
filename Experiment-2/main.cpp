@@ -24,6 +24,9 @@
 #include "Select_linestyle.h"
 #include "Select_linewidth.h"
 #include "Polygon.h"
+#include "Select_translate.h"
+#include "Clipping.h"
+#include "UI.h"
 // #define DEBUG
 #include "debug.h"
 using namespace std;
@@ -354,8 +357,43 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         else if(PtInRect(&MyPolygon::rect,bt))
             note(24,"Polygon");
+        else if(PtInRect(&Select_translate::rect, bt))
+            note(25, "Translate");
+        else if(PtInRect(&clip_button_rect, bt))
+            note(26, "Please Select The Top and Button Points of The Rect!");
         else
         {
+            if (state == 26) // 裁剪状态
+            {
+                if (arr.size() == 2)
+                {
+                    POINT p1 = arr[0];
+                    POINT p2 = arr[1];
+
+                    RECT clipRect;
+                    clipRect.left = min(p1.x, p2.x);
+                    clipRect.right = max(p1.x, p2.x);
+                    clipRect.top = min(p1.y, p2.y);
+                    clipRect.bottom = max(p1.y, p2.y);
+
+                    vector<Line> clipped_lines;
+                    for (auto& l : lines)
+                    {
+                        Line temp_line = l;
+                        if (liangBarskyClip(temp_line, clipRect))
+                        {
+                            clipped_lines.push_back(temp_line);
+                        }
+                    }
+                    lines = clipped_lines;
+
+                    arr.clear();
+                    state = -1;
+                    InvalidateRect(hWnd, NULL, TRUE);
+                    MessageBox(hWnd, "Finish Cut!", "Note", MB_OK);
+                }
+                // 等待第二个点
+            }
             if(state == 23) 
             {
                 bool found = false;

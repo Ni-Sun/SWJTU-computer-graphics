@@ -19,6 +19,8 @@
 #include "Select_linestyle.h"
 #include "Select_linewidth.h"
 #include "Polygon.h"
+#include "Select_translate.h"
+#include "UI.h"
 
 extern vector<Line> lines;
 extern vector<Circle> circles;
@@ -103,6 +105,8 @@ void Draw_Title(HWND hWnd, HDC hdc)
     draw(linestyle_button_color, linestyle_button_rect, L"修改线型");
     draw(linewidth_button_color, linewidth_button_rect, L"修改线宽");
     draw(MyPolygon::color, MyPolygon::rect, L"多边形");
+    draw(Select_translate::color, Select_translate::rect, L"平移");
+    draw(clip_button_color, clip_button_rect, L"裁剪");
     // draw()
     // 恢复并删除临时字体//
     SelectObject(hdc, hOldFont);
