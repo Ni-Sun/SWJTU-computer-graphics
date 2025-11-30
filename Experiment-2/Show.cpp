@@ -107,6 +107,7 @@ void Draw_Title(HWND hWnd, HDC hdc)
     draw(MyPolygon::color, MyPolygon::rect, L"多边形");
     draw(Select_translate::color, Select_translate::rect, L"平移");
     draw(clip_button_color, clip_button_rect, L"裁剪");
+    draw(sh_clip_button_color, sh_clip_button_rect, L"S-H 裁剪");
     // draw()
     // 恢复并删除临时字体//
     SelectObject(hdc, hOldFont);
