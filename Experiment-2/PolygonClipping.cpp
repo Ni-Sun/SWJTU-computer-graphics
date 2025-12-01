@@ -1,6 +1,5 @@
 #include "PolygonClipping.h"
-
-// Define clipping edges
+// 裁剪矩形
 enum ClipEdge {
     LEFT,
     RIGHT,
@@ -8,12 +7,12 @@ enum ClipEdge {
     TOP
 };
 
-// Computes the intersection of a line segment (p1-p2) with a clipping edge.
+//顶点p1和p2与裁剪矩形clipWindow中边edge交点
 POINT intersect(const POINT& p1, const POINT& p2, ClipEdge edge, const RECT& clipWindow) {
     POINT res = {0, 0};
     double dx = p2.x - p1.x;
     double dy = p2.y - p1.y;
-
+//这部分根据前面Liang-Barsky求解：
     if (edge == LEFT || edge == RIGHT) {
         double clipX = (edge == LEFT) ? clipWindow.left : clipWindow.right;
         if (dx != 0) {
@@ -22,7 +21,7 @@ POINT intersect(const POINT& p1, const POINT& p2, ClipEdge edge, const RECT& cli
             res.y = p1.y;
         }
         res.x = (LONG)clipX;
-    } else { // TOP or BOTTOM
+    } else { 
         double clipY = (edge == TOP) ? clipWindow.top : clipWindow.bottom;
         if (dy != 0) {
             res.x = p1.x + dx * (clipY - p1.y) / dy;
@@ -34,59 +33,55 @@ POINT intersect(const POINT& p1, const POINT& p2, ClipEdge edge, const RECT& cli
     return res;
 }
 
-// Checks if a point is inside a clipping edge.
+// 点p是否在裁剪多边形clipWindow中边edge内侧
 bool isInside(const POINT& p, ClipEdge edge, const RECT& clipWindow) {
     switch (edge) {
-        case LEFT:   return p.x >= clipWindow.left;
-        case RIGHT:  return p.x <= clipWindow.right;
-        case TOP:    return p.y >= clipWindow.top; // In GDI, smaller y is higher
-        case BOTTOM: return p.y <= clipWindow.bottom;
+        case LEFT:   return p.x >= clipWindow.left;//左边
+        case RIGHT:  return p.x <= clipWindow.right;//右边
+        case TOP:    return p.y >= clipWindow.top; //注意：TOP是“画布”视觉上在上面
+        case BOTTOM: return p.y <= clipWindow.bottom;//注意：BUTTON是“画布”视觉上在下面
     }
     return false;
 }
 
-// Clips a polygon against a single edge of the clip window.
+// 对矩形裁剪框clipWindow的边edge，处理多边形每一条边（s-p)
 std::vector<POINT> clipAgainstEdge(const std::vector<POINT>& subjectPolygon, ClipEdge edge, const RECT& clipWindow) {
     std::vector<POINT> outputList;
     if (subjectPolygon.empty()) {
         return outputList;
     }
 
-    POINT s = subjectPolygon.back();
-    for (const auto& p : subjectPolygon) {
+    POINT s = subjectPolygon.back(); //取多边形最后一个点
+    for (const auto& p : subjectPolygon) {  //对多边形每一个点
         bool s_inside = isInside(s, edge, clipWindow);
         bool p_inside = isInside(p, edge, clipWindow);
-
-        // Case 1: Both points are inside
+        // 2个点都在，p输出
         if (s_inside && p_inside) {
             outputList.push_back(p);
         }
-        // Case 2: Start point is inside, end point is outside
+        //s在而p不在，交点输出
         else if (s_inside && !p_inside) {
             outputList.push_back(intersect(s, p, edge, clipWindow));
         }
-        // Case 3: Start point is outside, end point is inside
+        //s不在而p在，先输出交点，再输出p
         else if (!s_inside && p_inside) {
             outputList.push_back(intersect(s, p, edge, clipWindow));
             outputList.push_back(p);
         }
-        // Case 4: Both points are outside - do nothing
-
-        s = p; // Move to the next edge
+        //2个点都不在内侧：舍弃s和p
+        s = p; // 遍历下一条边
     }
-    return outputList;
+    return outputList;//处理结束后多边形点
 }
 
-// Main Sutherland-Hodgman clipping function
+// Sutherland-Hodgman
 std::vector<POINT> sutherlandHodgmanClip(const std::vector<POINT>& subjectPolygon, const RECT& clipWindow) {
-    // Clip against the left edge
+    // 遍历4个裁剪边：
     std::vector<POINT> clipped = clipAgainstEdge(subjectPolygon, LEFT, clipWindow);
-    // Clip the result against the right edge
     clipped = clipAgainstEdge(clipped, RIGHT, clipWindow);
-    // Clip the result against the top edge
     clipped = clipAgainstEdge(clipped, TOP, clipWindow);
-    // Clip the final result against the bottom edge
     clipped = clipAgainstEdge(clipped, BOTTOM, clipWindow);
     
     return clipped;
+    //最终多边形
 }
