@@ -90,6 +90,65 @@ Rhombus origRhombus;
 POINT rotate_center = {0,0};
 double rotate_init_angle = 0.0;
 
+// START: Polygon validation functions
+// Helper to check if point q lies on segment pr
+bool onSegment(POINT p, POINT q, POINT r) {
+    if (q.x <= max(p.x, r.x) && q.x >= min(p.x, r.x) &&
+        q.y <= max(p.y, r.y) && q.y >= min(p.y, r.y))
+        return true;
+    return false;
+}
+
+//有序点对：通过叉乘相反数(-d)判断位置关系,-d>0,顺时针，-d<0，逆时针
+int orientation(POINT p, POINT q, POINT r) {
+    long long val = (long long)(q.y - p.y) * (r.x - q.x) -
+                    (long long)(q.x - p.x) * (r.y - q.y);
+    if (val == 0) return 0;  // Collinear
+    return (val > 0) ? 1 : 2; // Clockwise or Counterclockwise
+}
+
+// 线段p1q1和线段p2q2是否相交orientation(p1,q1,p2)&&onSegment(p1,p2,q1)||
+//orientation(p1,q1,q2)&&onSegment(p1,q2,q1)
+bool doIntersect(POINT p1, POINT q1, POINT p2, POINT q2) {
+    int o1 = orientation(p1, q1, p2);
+    int o2 = orientation(p1, q1, q2);
+    int o3 = orientation(p2, q2, p1);
+    int o4 = orientation(p2, q2, q1);
+
+    if (o1 != o2 && o3 != o4)
+        return true;
+
+    if (o1 == 0 && onSegment(p1, p2, q1)) return true;
+    if (o2 == 0 && onSegment(p1, q2, q1)) return true;
+    if (o3 == 0 && onSegment(p2, p1, q2)) return true;
+    if (o4 == 0 && onSegment(p2, q1, q2)) return true;
+
+    return false;
+}
+
+// Function to check if a polygon with given vertices is simple
+bool isSimplePolygon(const std::vector<POINT>& points) {
+    int n = points.size();
+    if (n < 4) return true;
+
+    for (int i = 0; i < n; i++) {
+        POINT p1 = points[i];
+        POINT q1 = points[(i + 1) % n];
+        for (int j = i + 2; j < n; j++) {
+            if (i == 0 && j == n - 1) {
+                continue;
+            }
+            POINT p2 = points[j];
+            POINT q2 = points[(j + 1) % n];
+            if (doIntersect(p1, q1, p2, q2)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+// END: Polygon validation functions
+
 // 保存/加载辅助函数(使用文件对话框)
 static void SaveShapes(HWND hWnd)
 {
@@ -929,7 +988,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             if (state == 24) {
                 if (arr.size() >= 3) {
-                    mypolygons.push_back(MyPolygon(arr));
+                    if (isSimplePolygon(arr)) {
+                        mypolygons.push_back(MyPolygon(arr));
+                    } else {
+                        MessageBox(hWnd, "多边形不合法（边有交叉），请重试。", "无效多边形", MB_OK | MB_ICONWARNING);
+                    }
                 }
                 state = -1; // Reset state
                 arr.clear(); // Ensure arr is cleared
