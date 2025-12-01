@@ -28,6 +28,7 @@
 #include "Clipping.h"
 #include "UI.h"
 #include "PolygonClipping.h"
+#include "WeilerAtherton.h"
 // #define DEBUG
 #include "debug.h"
 using namespace std;
@@ -423,8 +424,45 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             note(26, "Clip Mode: Click two points on the canvas to define the clipping rectangle.");
         else if(PtInRect(&sh_clip_button_rect, bt))
             note(27, "S-H Clip Mode: Click two points on the canvas to define the polygon clipping rectangle.");
+        else if(PtInRect(&wa_clip_button_rect, bt))
+            note(28, "W-A Clip Mode: Click two points to define clip rectangle.");
         else
         {
+            if (state == 28) // W-A 裁剪状态
+            {
+                if (arr.size() == 2)
+                {
+                    POINT p1 = arr[0];
+                    POINT p2 = arr[1];
+
+                    // 从两点创建裁剪多边形(矩形)
+                    std::vector<POINT> clipPolygon;
+                    clipPolygon.push_back({min(p1.x, p2.x), min(p1.y, p2.y)});
+                    clipPolygon.push_back({max(p1.x, p2.x), min(p1.y, p2.y)});
+                    clipPolygon.push_back({max(p1.x, p2.x), max(p1.y, p2.y)});
+                    clipPolygon.push_back({min(p1.x, p2.x), max(p1.y, p2.y)});
+
+                    vector<MyPolygon> new_polygons;
+                    for (auto& poly : mypolygons)
+                    {
+                        // weilerAthertonClip返回一个多边形向量
+                        std::vector<std::vector<POINT>> clipped_results = weilerAthertonClip(poly.p, clipPolygon);
+                        for(const auto& clipped_points : clipped_results)
+                        {
+                            if (!clipped_points.empty())
+                            {
+                                new_polygons.push_back(MyPolygon(clipped_points));
+                            }
+                        }
+                    }
+                    mypolygons = new_polygons;
+
+                    arr.clear();
+                    state = -1;
+                    InvalidateRect(hWnd, NULL, TRUE);
+                    MessageBox(hWnd, "W-A clipping finished.", "Note", MB_OK);
+                }
+            }
             if (state == 27) // S-H 裁剪状态
             {
                 if (arr.size() == 2)
