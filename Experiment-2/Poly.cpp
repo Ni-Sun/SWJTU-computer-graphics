@@ -1,6 +1,6 @@
 #include "Poly.h"
 extern vector<Poly> polylines;
-RECT Poly::rect={240,0,300,30};
+RECT Poly::rect={420,0,480,30};
 COLORREF Poly::color=RGB(136,15,255);
 
 void Draw_Poly(HWND hWnd, vector<POINT> &arr)
@@ -15,5 +15,4 @@ void Draw_Poly(HWND hWnd, vector<POINT> &arr)
     arr.erase(arr.begin());
     DeleteObject(hPen);
     ReleaseDC(hWnd,hdc);
-    // polylines.emplace_back()     ??????
 }

@@ -5,6 +5,10 @@ extern vector<Circle> circles;
 extern vector<POINT> Cross_points;
 RECT Circle::rect={60,0,120,30};
 COLORREF Circle::color=RGB(255,242,45);
+RECT Circle::midpoint_rect={200, 530, 300, 560};
+COLORREF Circle::midpoint_color=RGB(255, 255, 0);
+RECT Circle::bresenham_rect={300, 530, 400, 560};
+COLORREF Circle::bresenham_color=RGB(0, 0, 255);
 
 void Draw_circle(HWND hWnd, vector<POINT> &arr)
 {
@@ -45,3 +49,67 @@ void Draw_circle(HWND hWnd, vector<POINT> &arr)
     circles.push_back(A);
 }
 
+void plot_circle_points(HDC hdc, int xc, int yc, int x, int y, COLORREF color) {
+    SetPixel(hdc, xc + x, yc + y, color);
+    SetPixel(hdc, xc - x, yc + y, color);
+    SetPixel(hdc, xc + x, yc - y, color);
+    SetPixel(hdc, xc - x, yc - y, color);
+    SetPixel(hdc, xc + y, yc + x, color);
+    SetPixel(hdc, xc - y, yc + x, color);
+    SetPixel(hdc, xc + y, yc - x, color);
+    SetPixel(hdc, xc - y, yc - x, color);
+}
+
+void Draw_midpoint_circle(HWND hWnd, vector<POINT>& arr) {
+    HDC hdc = GetDC(hWnd);
+    auto center = arr[0];
+    auto point_on_circle = arr[1];
+    int r = static_cast<int>(sqrt(pow(point_on_circle.x - center.x, 2) + pow(point_on_circle.y - center.y, 2)));
+
+    int x = 0, y = r;
+    int d = 1 - r;
+
+    plot_circle_points(hdc, center.x, center.y, x, y, Circle::midpoint_color);
+
+    while (x < y) {
+        x++;
+        if (d < 0) {
+            d += 2 * x + 1;
+        } else {
+            y--;
+            d += 2 * (x - y) + 1;
+        }
+        plot_circle_points(hdc, center.x, center.y, x, y, Circle::midpoint_color);
+    }
+
+    arr.clear();
+    ReleaseDC(hWnd, hdc);
+    circles.push_back(Circle(center, r));
+}
+
+void Draw_bresenham_circle(HWND hWnd, vector<POINT>& arr) {
+    HDC hdc = GetDC(hWnd);
+    auto center = arr[0];
+    auto point_on_circle = arr[1];
+    int r = static_cast<int>(sqrt(pow(point_on_circle.x - center.x, 2) + pow(point_on_circle.y - center.y, 2)));
+
+    int x = 0, y = r;
+    int d = 3 - 2 * r;
+
+    plot_circle_points(hdc, center.x, center.y, x, y, Circle::bresenham_color);
+
+    while (x < y) {
+        x++;
+        if (d < 0) {
+            d = d + 4 * x + 6;
+        } else {
+            y--;
+            d = d + 4 * (x - y) + 10;
+        }
+        plot_circle_points(hdc, center.x, center.y, x, y, Circle::bresenham_color);
+    }
+
+    arr.clear();
+    ReleaseDC(hWnd, hdc);
+    circles.push_back(Circle(center, r));
+}

@@ -12,9 +12,14 @@ struct Line
 {
     int left, right, button, top;
     POINT s,e;
+    bool dashed = false;
     double a,b,c;   // ax + by + c = 0
     static RECT rect;
     static COLORREF color;
+    static RECT midpoint_rect;
+    static COLORREF midpoint_color;
+    static RECT bresenham_rect;
+    static COLORREF bresenham_color;
     Line()
     {
         a=b=c=0;
@@ -32,4 +37,6 @@ struct Line
 };
 
 void Draw_line(HWND hWnd, vector<POINT> &arr);
+void Draw_midpoint_line(HWND hWnd, vector<POINT> &arr);
+void Draw_bresenham_line(HWND hWnd, vector<POINT> &arr);
 Point lineprog(POINT P, Line A);
